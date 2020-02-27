@@ -1,7 +1,9 @@
 #include <image_pipeline.h>
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw"; webcam:"camera/image"
+// #define IMAGE_TOPIC "camera/rgb/image_raw"
+#define IMAGE_TOPIC "camera/rgb/image_raw"
+// #define IMAGE_TOPIC "camera/image"
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
 {
