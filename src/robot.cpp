@@ -3,6 +3,9 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <tf/transform_datatypes.h>
 
+global bool obj_visited[boxes.coords.size()] = {false};
+global int obj_order[boxes.coords.size()] = {0};
+
 bool Robot::move_to_goal(float goal_x, float goal_y, float goal_phi)
 {
 	// set up and wait for actionClient
@@ -40,4 +43,37 @@ bool Robot::move_to_goal(float goal_x, float goal_y, float goal_phi)
         ROS_INFO("The robot failed to reach the destination");
         return false;
     }
+}
+
+void Robot::prioritize()
+{
+    // Count the number of unvisited objectives
+    int obj_remaining = 0;
+    for(int ctr = 0; ctr < obj_visited.size; ctr++)
+    {
+        if(obj_visited[ctr] == false) {obj_remaining++;}
+    }
+
+    // Get the x and y positions of the robot and the unvisited objectives
+    float obj_positions[1 + obj_remaining][2] = {0};
+    for(int ctr = 0; ctr < obj_positions.size(); ctr++)
+    {
+        if(ctr == 0)
+        {
+            obj_positions[ctr][0] = robotPose.x;
+            obj_positions[ctr][1] = robotPose.y;
+        }
+        else
+        {
+            if(obj_visited[ctr - 1] == false)
+            {
+                obj_positions[ctr][0] = boxes.coords[ctr - 1][0];
+                obj_positions[ctr][1] = boxes.coords[ctr - 1][1];
+            }
+        }
+    }
+
+    // Compute the distances between each location
+    float obj_distances[1 + obj_remaining][1 + obj_remaining] = {0};
+    for(int i = 0; i < )
 }
