@@ -96,7 +96,7 @@ void ImagePipeline::match_to_templates(const Boxes& boxes)
     for (const auto& template_features : box_features)
         num_matches[(box_idx++)] = match_to_template(template_features, scene_features);
 
-    // get maximum of the match
+    // get iterator to the maximum in num_matches
     auto max_match = std::max_element(num_matches.begin(), num_matches.end());
 
     // while best match is less than rematch thresh, run rematching
@@ -120,8 +120,8 @@ void ImagePipeline::match_to_templates(const Boxes& boxes)
         templateID = TEMPLATE::BLANK;
     else
     {
-        // template ID corresponds to idx of maximum + 1 since BLANK is at 0 in TEMPLATE
-        int idx = std::distance(num_matches.begin(), max_match);
+        // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
+        int idx = max_match - num_matches.begin();
         templateID = TEMPLATE(idx + 1);
     }
 }
