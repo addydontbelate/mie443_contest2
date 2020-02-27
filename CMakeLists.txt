@@ -3,7 +3,7 @@ project(mie443_contest2)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
-find_package(OpenCV 3 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
     actionlib
     move_base_msgs
