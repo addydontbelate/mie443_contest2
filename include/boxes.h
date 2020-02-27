@@ -5,11 +5,12 @@
 #include <tf/transform_broadcaster.h>
 #include <vector>
 
-class Boxes {
-	public:
-		std::vector<cv::Mat> templates;
-		std::vector<std::vector<float>> coords;
-	public:
-		bool load_coords();
-		bool load_templates();
+class Boxes
+{
+ public:
+    std::vector<cv::Mat> templates;
+    std::vector<std::vector<float>> coords;
+
+    bool load_coords();
+    bool load_templates();
 };
