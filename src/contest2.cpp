@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         // Use: boxes.coords
         // Use: robot_pose.x, robot_pose.y, robot_pose.phi
         img_pipeline.get_template_ID(boxes);
-        ros::Duration(0.01).sleep();
+        ros::Duration(5).sleep();
     }
 
     exit(EXIT_SUCCESS);

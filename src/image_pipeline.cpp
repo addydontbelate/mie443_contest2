@@ -1,9 +1,8 @@
 #include <image_pipeline.h>
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-// #define IMAGE_TOPIC "camera/rgb/image_raw"
-#define IMAGE_TOPIC "camera/rgb/image_raw"
-// #define IMAGE_TOPIC "camera/image"
+// #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
+#define IMAGE_TOPIC "camera/image" // webcam
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
 {
@@ -70,16 +69,21 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     {
         // send current scene
         cv::imshow("view", scene_img);
-        cv::waitKey(10);
+        cv::waitKey(1000); // show for a second
 
         // find a match and update templateID
         match_to_templates(boxes);
     }
 
-    if (templateID != TEMPLATE::BLANK || templateID != TEMPLATE::UNINITIALIZED)
+    if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)
     {
         cv::imshow("view", boxes.templates[templateID-1]);
-        cv::waitKey(2000); // display detected template for 2 seconds
+        cv::waitKey(1000); // display detected template for 1 second
+    }
+    else if (templateID == TEMPLATE::BLANK)
+    {
+        cv::imshow("view",cv::Mat(400, 400, CV_8UC3, cv::Scalar(255, 255, 255)));
+        cv::waitKey(1000); // display detected template for 1 second
     }
 
     return templateID;
@@ -104,22 +108,24 @@ void ImagePipeline::match_to_templates(const Boxes& boxes)
     // while best match is less than rematch thresh, run rematching
     while (*max_match < REMATCH_THRESH && rematches_reqd < NUM_REMATCH)
     {
-        ROS_INFO("[IMG_PIPE] Running a rematch");
+        ROS_INFO("[IMG_PIPE] Trying to rematch");
         ros::spinOnce();
         detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
-
+        
         // rematch
         box_idx = 0;
         for (const auto& template_features : box_features)
             num_matches[(box_idx++)] = match_to_template(template_features, scene_features);
-
+        
         max_match = std::max_element(num_matches.begin(), num_matches.end());
         rematches_reqd++;
     }
 
     // if at the end of rematching, best match was less than low match thresh, then return blank
     if (*max_match < REMATCH_THRESH)
+    {
         templateID = TEMPLATE::BLANK;
+    }
     else
     {
         // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE

@@ -42,7 +42,7 @@ class ImagePipeline
     std::vector<ImageFeatures> box_features;
     cv::Ptr<cv::xfeatures2d::SURF> detector;
     cv::FlannBasedMatcher matcher;
-    int templateID;
+    TEMPLATE templateID;
     void load_template_features(const Boxes& boxes);
     void match_to_templates(const Boxes& boxes);
     int match_to_template(const ImageFeatures& template_features, const ImageFeatures& feature);
