@@ -24,7 +24,7 @@ include_directories(include
 add_executable(contest2 
     src/contest2.cpp
     src/boxes.cpp
-    src/navigation.cpp
+    src/Robot.cpp
     src/robot_pose.cpp
         src/image_pipeline.cpp)
 target_link_libraries(contest2 
