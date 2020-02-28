@@ -11,7 +11,7 @@
 #include "opencv2/imgproc.hpp"
 #include "boxes.h"
 
-// # rematch tries to improve confidence in detection
+// FLANN-based keypoint matching constants
 #define NUM_REMATCH 2
 #define REMATCH_THRESH 30
 #define GOOD_MATCH_DIST 0.2

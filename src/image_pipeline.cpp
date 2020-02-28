@@ -85,6 +85,8 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         cv::imshow("view",cv::Mat(400, 400, CV_8UC3, cv::Scalar(255, 255, 255)));
         cv::waitKey(1000); // display detected template for 1 second
     }
+    else
+        ROS_ERROR("[IMG_PIPE] Could not assign template ID; sending uninitialized ID!");
 
     return templateID;
 }
