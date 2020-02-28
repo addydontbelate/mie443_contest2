@@ -138,6 +138,11 @@ void ImagePipeline::match_to_templates(const Boxes& boxes)
 
 int ImagePipeline::match_to_template(const ImageFeatures& template_features, const ImageFeatures& scene_features)
 {
+    // TODO: Have different ways to match to template: ranging from finding homography, ratio-tests, knn
+    //  matching, etc.
+    // TODO: Test for timing for each, and have infrastructure to record matching time for each strategy.
+    // TODO: select best time and accuracy strategy, and push to vision-deploy
+
     // feature matching
     std::vector<cv::DMatch> matches;
     matcher.match(template_features.descriptors, scene_features.descriptors, matches);
