@@ -5,17 +5,27 @@
 #include <opencv2/core.hpp>
 #include <cv.h>
 #include <cv_bridge/cv_bridge.h>
+#include <fstream>
+#include <chrono>
 #include "opencv2/highgui.hpp"
 #include "opencv2/calib3d.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/imgproc.hpp"
 #include "boxes.h"
 
+// timer macros
+#define TIME std::chrono::time_point<std::chrono::system_clock>
+#define CLOCK std::chrono::system_clock
+#define TIME_S std::chrono::duration_cast<std::chrono::seconds>
+
 // FLANN-based keypoint matching constants
 #define NUM_REMATCH 2
 #define REMATCH_THRESH 30
 #define GOOD_MATCH_DIST 0.2
-#define MIN_HESSIAN 600
+#define MIN_HESSIAN 400
+
+// log file
+#define LOG_FILE "../../vision_log.txt"
 
 // possible template IDs
 enum TEMPLATE
@@ -36,19 +46,27 @@ struct ImageFeatures
 class ImagePipeline
 {
  private:
+    std::ofstream logfile;
     cv::Mat scene_img;
     bool is_valid;
     image_transport::Subscriber sub;
     std::vector<ImageFeatures> box_features;
-    cv::Ptr<cv::xfeatures2d::SURF> detector;
-    cv::FlannBasedMatcher matcher;
+    cv::Ptr<cv::xfeatures2d::SURF> flann_dist_detector;
+    cv::FlannBasedMatcher flann_dist_matcher;
     TEMPLATE templateID;
     void load_template_features(const Boxes& boxes);
-    void match_to_templates(const Boxes& boxes);
-    int match_to_template(const ImageFeatures& template_features, const ImageFeatures& feature);
+    void match_to_templates_flann_dist(const Boxes& boxes);
+    void match_to_templates_flann_knn(const Boxes& boxes);
+    void match_to_templates_ratio(const Boxes& boxes);
+    void match_to_templates_homog(const Boxes& boxes);
+    int match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& feature);
+    int match_to_template_flann_knn(const ImageFeatures& template_features, const ImageFeatures& feature);
+    int match_to_template_ratio(const ImageFeatures& template_features, const ImageFeatures& feature);
+    int match_to_template_homog(const ImageFeatures& template_features, const ImageFeatures& feature);
 
  public:
     explicit ImagePipeline(ros::NodeHandle& n, const Boxes& boxes);
     void image_callback(const sensor_msgs::ImageConstPtr& msg);
     int get_template_ID(const Boxes& boxes);
+    ~ImagePipeline() { logfile.close(); }
 };
