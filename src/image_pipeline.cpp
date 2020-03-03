@@ -10,7 +10,9 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     sub = it.subscribe(IMAGE_TOPIC, 1, &ImagePipeline::image_callback, this);
     is_valid = false;
     templateID = TEMPLATE::UNINITIALIZED;
-    detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
+    flann_dist_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
+    logfile.open(LOG_FILE, std::ofstream::out | std::ofstream::app);
+    logfile << "\n\n************ NEW RUN *************\n";
 
     load_template_features(boxes);
 }
@@ -21,7 +23,7 @@ void ImagePipeline::load_template_features(const Boxes& boxes)
     for (const auto& box : boxes.templates)
     {
         ImageFeatures features;
-        detector->detectAndCompute(box, cv::Mat(), features.keypoints, features.descriptors);
+        flann_dist_detector->detectAndCompute(box, cv::Mat(), features.keypoints, features.descriptors);
         box_features.push_back(features);
     }
 
@@ -72,7 +74,10 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         cv::waitKey(1000); // show for a second
 
         // find a match and update templateID
-        match_to_templates(boxes);
+        match_to_templates_flann_dist(boxes);
+        match_to_templates_flann_knn(boxes);
+        match_to_templates_ratio(boxes);
+        match_to_templates_homog(boxes);
     }
 
     if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)
@@ -91,36 +96,39 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     return templateID;
 }
 
-void ImagePipeline::match_to_templates(const Boxes& boxes)
+void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
 {
+    uint64_t seconds_elapsed = 0.0;
+    TIME start = CLOCK::now();
+
     // detect scene features
     ImageFeatures scene_features;
-    detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+    flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
 
     // match against box object/template features
-    int rematches_reqd = 0, box_idx = 0;
+    int rematch_tries = 0, box_idx = 0;
     std::vector<int> num_matches(box_features.size(), 0);
 
     for (const auto& template_features : box_features)
-        num_matches[(box_idx++)] = match_to_template(template_features, scene_features);
+        num_matches[(box_idx++)] = match_to_template_flann_dist(template_features, scene_features);
 
     // get iterator to the maximum in num_matches
     auto max_match = std::max_element(num_matches.begin(), num_matches.end());
 
     // while best match is less than rematch thresh, run rematching
-    while (*max_match < REMATCH_THRESH && rematches_reqd < NUM_REMATCH)
+    while (*max_match < REMATCH_THRESH && rematch_tries < NUM_REMATCH)
     {
         ROS_INFO("[IMG_PIPE] Trying to rematch");
         ros::spinOnce();
-        detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+        flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
         
         // rematch
         box_idx = 0;
         for (const auto& template_features : box_features)
-            num_matches[(box_idx++)] = match_to_template(template_features, scene_features);
+            num_matches[(box_idx++)] = match_to_template_flann_dist(template_features, scene_features);
         
         max_match = std::max_element(num_matches.begin(), num_matches.end());
-        rematches_reqd++;
+        rematch_tries++;
     }
 
     // if at the end of rematching, best match was less than low match thresh, then return blank
@@ -134,18 +142,170 @@ void ImagePipeline::match_to_templates(const Boxes& boxes)
         int idx = max_match - num_matches.begin();
         templateID = TEMPLATE(idx + 1);
     }
+
+    // print to log
+    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
+    logfile << "[FLANN DIST THRESH] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
 }
 
-int ImagePipeline::match_to_template(const ImageFeatures& template_features, const ImageFeatures& scene_features)
+void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
 {
-    // TODO: Have different ways to match to template: ranging from finding homography, ratio-tests, knn
-    //  matching, etc.
-    // TODO: Test for timing for each, and have infrastructure to record matching time for each strategy.
-    // TODO: select best time and accuracy strategy, and push to vision-deploy
+    uint64_t seconds_elapsed = 0.0;
+    TIME start = CLOCK::now();
 
-    // feature matching
+    ImageFeatures scene_features;
+    flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+
+    // match against box object/template features
+    int rematch_tries = 0, box_idx = 0;
+    std::vector<int> num_matches(box_features.size(), 0);
+
+    for (const auto& template_features : box_features)
+        num_matches[(box_idx++)] = match_to_template_flann_knn(template_features, scene_features);
+
+    // get iterator to the maximum in num_matches
+    auto max_match = std::max_element(num_matches.begin(), num_matches.end());
+
+    // while best match is less than rematch thresh, run rematching
+    while (*max_match < REMATCH_THRESH && rematch_tries < NUM_REMATCH)
+    {
+        ROS_INFO("[IMG_PIPE] Trying to rematch");
+        ros::spinOnce();
+        flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+        
+        // rematch
+        box_idx = 0;
+        for (const auto& template_features : box_features)
+            num_matches[(box_idx++)] = match_to_template_flann_knn(template_features, scene_features);
+        
+        max_match = std::max_element(num_matches.begin(), num_matches.end());
+        rematch_tries++;
+    }
+
+    // if at the end of rematching, best match was less than low match thresh, then return blank
+    if (*max_match < REMATCH_THRESH)
+    {
+        templateID = TEMPLATE::BLANK;
+    }
+    else
+    {
+        // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
+        int idx = max_match - num_matches.begin();
+        templateID = TEMPLATE(idx + 1);
+    }
+
+    // print to log
+    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
+    logfile << "[FLANN KNN] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+}
+
+void ImagePipeline::match_to_templates_ratio(const Boxes& boxes)
+{
+    uint64_t seconds_elapsed = 0.0;
+    TIME start = CLOCK::now();
+
+    ImageFeatures scene_features;
+    flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+
+    // match against box object/template features
+    int rematch_tries = 0, box_idx = 0;
+    std::vector<int> num_matches(box_features.size(), 0);
+
+    for (const auto& template_features : box_features)
+        num_matches[(box_idx++)] = match_to_template_ratio(template_features, scene_features);
+
+    // get iterator to the maximum in num_matches
+    auto max_match = std::max_element(num_matches.begin(), num_matches.end());
+
+    // while best match is less than rematch thresh, run rematching
+    while (*max_match < REMATCH_THRESH && rematch_tries < NUM_REMATCH)
+    {
+        ROS_INFO("[IMG_PIPE] Trying to rematch");
+        ros::spinOnce();
+        flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+        
+        // rematch
+        box_idx = 0;
+        for (const auto& template_features : box_features)
+            num_matches[(box_idx++)] = match_to_template_ratio(template_features, scene_features);
+        
+        max_match = std::max_element(num_matches.begin(), num_matches.end());
+        rematch_tries++;
+    }
+
+    // if at the end of rematching, best match was less than low match thresh, then return blank
+    if (*max_match < REMATCH_THRESH)
+    {
+        templateID = TEMPLATE::BLANK;
+    }
+    else
+    {
+        // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
+        int idx = max_match - num_matches.begin();
+        templateID = TEMPLATE(idx + 1);
+    }
+
+    // print to log
+    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
+    logfile << "[RATIO] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+}
+
+void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
+{
+    uint64_t seconds_elapsed = 0.0;
+    TIME start = CLOCK::now();
+
+    ImageFeatures scene_features;
+    flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+
+    // match against box object/template features
+    int rematch_tries = 0, box_idx = 0;
+    std::vector<int> num_matches(box_features.size(), 0);
+
+    for (const auto& template_features : box_features)
+        num_matches[(box_idx++)] = match_to_template_homog(template_features, scene_features);
+
+    // get iterator to the maximum in num_matches
+    auto max_match = std::max_element(num_matches.begin(), num_matches.end());
+
+    // while best match is less than rematch thresh, run rematching
+    while (*max_match < REMATCH_THRESH && rematch_tries < NUM_REMATCH)
+    {
+        ROS_INFO("[IMG_PIPE] Trying to rematch");
+        ros::spinOnce();
+        flann_dist_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
+        
+        // rematch
+        box_idx = 0;
+        for (const auto& template_features : box_features)
+            num_matches[(box_idx++)] = match_to_template_homog(template_features, scene_features);
+        
+        max_match = std::max_element(num_matches.begin(), num_matches.end());
+        rematch_tries++;
+    }
+
+    // if at the end of rematching, best match was less than low match thresh, then return blank
+    if (*max_match < REMATCH_THRESH)
+    {
+        templateID = TEMPLATE::BLANK;
+    }
+    else
+    {
+        // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
+        int idx = max_match - num_matches.begin();
+        templateID = TEMPLATE(idx + 1);
+    }
+
+    // print to log
+    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
+    logfile << "[HOMOG] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+}
+
+int ImagePipeline::match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& scene_features)
+{
+    // feature matching using hamming distance threshold
     std::vector<cv::DMatch> matches;
-    matcher.match(template_features.descriptors, scene_features.descriptors, matches);
+    flann_dist_matcher.match(template_features.descriptors, scene_features.descriptors, matches);
 
     // count "good" matches
     int num_good_matches = 0;
@@ -156,4 +316,19 @@ int ImagePipeline::match_to_template(const ImageFeatures& template_features, con
     }
 
     return num_good_matches;
+}
+
+int ImagePipeline::match_to_template_flann_knn(const ImageFeatures& template_features, const ImageFeatures& feature)
+{
+    ;
+}
+
+int ImagePipeline::match_to_template_ratio(const ImageFeatures& template_features, const ImageFeatures& feature)
+{
+    ;
+}
+
+int ImagePipeline::match_to_template_homog(const ImageFeatures& template_features, const ImageFeatures& feature)
+{
+    ;
 }
