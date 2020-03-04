@@ -23,6 +23,10 @@
 #define REMATCH_THRESH 30
 #define GOOD_MATCH_DIST 0.2
 #define MIN_HESSIAN 400
+#define RATIO_THRESH 0.7
+#define MIN_AREA 100
+#define TEMPLATE_COLS 400
+#define TEMPLATE_ROWS 400
 
 // log file
 #define LOG_FILE "../../vision_log.txt"
@@ -51,18 +55,16 @@ class ImagePipeline
     bool is_valid;
     image_transport::Subscriber sub;
     std::vector<ImageFeatures> box_features;
-    cv::Ptr<cv::xfeatures2d::SURF> flann_dist_detector;
-    cv::FlannBasedMatcher flann_dist_matcher;
+    cv::Ptr<cv::xfeatures2d::SURF> flann_detector;
+    cv::FlannBasedMatcher flann_matcher;
     TEMPLATE templateID;
-    void load_template_features(const Boxes& boxes);
-    void match_to_templates_flann_dist(const Boxes& boxes);
-    void match_to_templates_flann_knn(const Boxes& boxes);
-    void match_to_templates_ratio(const Boxes& boxes);
-    void match_to_templates_homog(const Boxes& boxes);
-    int match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& feature);
-    int match_to_template_flann_knn(const ImageFeatures& template_features, const ImageFeatures& feature);
-    int match_to_template_ratio(const ImageFeatures& template_features, const ImageFeatures& feature);
-    int match_to_template_homog(const ImageFeatures& template_features, const ImageFeatures& feature);
+    void load_template_features(const Boxes&);
+    void match_to_templates_flann_dist(const Boxes&);
+    void match_to_templates_flann_knn(const Boxes&);
+    void match_to_templates_homog(const Boxes&);
+    int match_to_template_flann_dist(const ImageFeatures&, const ImageFeatures&);
+    int match_to_template_flann_knn(const ImageFeatures&, const ImageFeatures&);
+    int match_to_template_homog(const ImageFeatures&, const ImageFeatures&);
 
  public:
     explicit ImagePipeline(ros::NodeHandle& n, const Boxes& boxes);
