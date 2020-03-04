@@ -1,8 +1,11 @@
 #include <image_pipeline.h>
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-// #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
-#define IMAGE_TOPIC "camera/image" // webcam
+#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
+// #define IMAGE_TOPIC "camera/image" // webcam
+
+int TEMPLATE_COLS;
+int TEMPLATE_ROWS;
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
 {
@@ -22,6 +25,8 @@ void ImagePipeline::load_template_features(const Boxes& boxes)
     // store features of each box object/template to match against later
     for (const auto& box : boxes.templates)
     {
+        TEMPLATE_COLS = box.cols;
+        TEMPLATE_ROWS = box.rows;
         ImageFeatures features;
         flann_detector->detectAndCompute(box, cv::Mat(), features.keypoints, features.descriptors);
         box_features.push_back(features);
@@ -76,7 +81,7 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         // find a match and update templateID
         match_to_templates_flann_dist(boxes);
         match_to_templates_flann_knn(boxes);
-        match_to_templates_homog(boxes);
+        // match_to_templates_homog(boxes);
     }
 
     if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)

@@ -25,11 +25,9 @@
 #define MIN_HESSIAN 400
 #define RATIO_THRESH 0.7
 #define MIN_AREA 100
-#define TEMPLATE_COLS 400
-#define TEMPLATE_ROWS 400
 
 // log file
-#define LOG_FILE "../../vision_log.txt"
+#define LOG_FILE "/home/thursday/Desktop/vision_log.txt"
 
 // possible template IDs
 enum TEMPLATE
