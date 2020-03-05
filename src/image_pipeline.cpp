@@ -1,11 +1,11 @@
-#include <image_pipeline.h>
+#include "image_pipeline.h"
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
 // #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
 #define IMAGE_TOPIC "camera/image" // webcam
-
+h
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
-{
+{h
     image_transport::ImageTransport it(n);
     sub = it.subscribe(IMAGE_TOPIC, 1, &ImagePipeline::image_callback, this);
     is_valid = false;

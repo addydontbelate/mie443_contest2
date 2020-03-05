@@ -7,11 +7,7 @@ int main(int argc, char** argv)
 {
     // setup ROS
     ros::init(argc, argv, "contest2");
-    ros::NodeHandle n;
-
-    // robot pose object + subscriber
-    RobotPose robot_pose(0,0,0);
-    ros::Subscriber amcl_sub = n.subscribe("/amcl_pose", 1, &RobotPose::pose_callback, &robot_pose);
+    ros::NodeHandle nh;
 
     // initialize box coordinates and templates
     Boxes boxes; 
@@ -26,18 +22,20 @@ int main(int argc, char** argv)
                 boxes.coords[i][0], boxes.coords[i][1], boxes.coords[i][2]);
     }
 
-    // initialize image object and subscriber
-    ImagePipeline img_pipeline(n, boxes);
-
-    // execute strategy
+    // initialize image pipeline and navigation objects
+    Navigation nav(nh, boxes);
+    ImagePipeline img_pipeline(nh, boxes);
+    
+    // execute strategy FSM
+    ros::Rate loop_rate(10); // run at 10 Hz
     while(ros::ok())
     {
         ros::spinOnce();
-        /***YOUR CODE HERE***/
-        // Use: boxes.coords
-        // Use: robot_pose.x, robot_pose.y, robot_pose.phi
+        
+        // 
+
         img_pipeline.get_template_ID(boxes);
-        ros::Duration(5).sleep();
+        loop_rate.sleep();
     }
 
     exit(EXIT_SUCCESS);
