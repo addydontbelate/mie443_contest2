@@ -26,7 +26,8 @@ add_executable(contest2
     src/boxes.cpp
     src/navigation.cpp
     src/robot_pose.cpp
-        src/image_pipeline.cpp)
+    src/image_pipeline.cpp
+    include/logger.h)
 target_link_libraries(contest2 
     ${catkin_LIBRARIES}  
     ${OpenCV_LIBRARIES}  
