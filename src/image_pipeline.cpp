@@ -4,9 +4,6 @@
 #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
 // #define IMAGE_TOPIC "camera/image" // webcam
 
-int TEMPLATE_COLS;
-int TEMPLATE_ROWS;
-
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
 {
     image_transport::ImageTransport it(n);
@@ -14,9 +11,8 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     is_valid = false;
     templateID = TEMPLATE::UNINITIALIZED;
     flann_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
-    logfile.open(LOG_FILE, std::ofstream::out | std::ofstream::app);
-    logfile << "\n\n************ NEW RUN *************\n";
-
+    logger.open(VISION_LOG_FILE);
+    logger.write("\n\n************ NEW RUN *************\n");
     load_template_features(boxes);
 }
 
@@ -25,8 +21,6 @@ void ImagePipeline::load_template_features(const Boxes& boxes)
     // store features of each box object/template to match against later
     for (const auto& box : boxes.templates)
     {
-        TEMPLATE_COLS = box.cols;
-        TEMPLATE_ROWS = box.rows;
         ImageFeatures features;
         flann_detector->detectAndCompute(box, cv::Mat(), features.keypoints, features.descriptors);
         box_features.push_back(features);
@@ -149,7 +143,7 @@ void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
 
     // print to log
     seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logfile << "[FLANN DIST THRESH] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+    logger.write("[FLANN DIST THRESH] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
 }
 
 void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
@@ -200,7 +194,7 @@ void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
 
     // print to log
     seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logfile << "[FLANN KNN RATIO] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+    logger.write("[FLANN KNN RATIO] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
 }
 
 void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
@@ -216,7 +210,10 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
     std::vector<double> num_matches(box_features.size(), 0);
 
     for (const auto& template_features : box_features)
-        num_matches[(box_idx++)] = match_to_template_homog(template_features, scene_features);
+    {
+        num_matches[box_idx] = match_to_template_homog(template_features, boxes.templates[box_idx], scene_features);
+        box_idx++;
+    }
 
     // get iterator to the maximum in num_matches
     auto max_match = std::max_element(num_matches.begin(), num_matches.end());
@@ -231,8 +228,11 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
         // rematch
         box_idx = 0;
         for (const auto& template_features : box_features)
-            num_matches[(box_idx++)] = match_to_template_homog(template_features, scene_features);
-        
+        {
+            num_matches[box_idx] = match_to_template_homog(template_features, boxes.templates[box_idx], scene_features);
+            box_idx++;
+        }
+
         max_match = std::max_element(num_matches.begin(), num_matches.end());
         rematch_tries++;
     }
@@ -251,7 +251,7 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
 
     // print to log
     seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logfile << "[HOMOG] Detetcted " << templateID << " in " << seconds_elapsed << " s\n";
+    logger.write("[HOMOG] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
 }
 
 int ImagePipeline::match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& scene_features)
@@ -288,7 +288,8 @@ int ImagePipeline::match_to_template_flann_knn(const ImageFeatures& template_fea
     return num_good_matches;
 }
 
-int ImagePipeline::match_to_template_homog(const ImageFeatures& template_features, const ImageFeatures& scene_features)
+int ImagePipeline::match_to_template_homog(const ImageFeatures& template_features, const cv::Mat& template_img,
+        const ImageFeatures& scene_features)
 {
     // feature matching
     std::vector<cv::DMatch> matches;
@@ -322,11 +323,11 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     std::vector<cv::Point2f> obj;
     std::vector<cv::Point2f> scene;
 
-    for (int i = 0; i < good_matches.size(); i++)
+    for (auto & match : good_matches)
     {
         //-- Get the keypoints from the good matches
-        obj.push_back(template_features.keypoints[good_matches[i].queryIdx].pt);
-        scene.push_back(scene_features.keypoints[good_matches[i].trainIdx].pt);
+        obj.push_back(template_features.keypoints[match.queryIdx].pt);
+        scene.push_back(scene_features.keypoints[match.trainIdx].pt);
     }
 
     cv::Mat H = cv::findHomography(obj, scene, cv::RANSAC);
@@ -334,9 +335,9 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     //-- Get the corners from the image_1 ( the object to be "detected" )
     std::vector<cv::Point2f> obj_corners(4);
     obj_corners[0] = cv::Point(0,0); 
-    obj_corners[1] = cv::Point(TEMPLATE_COLS, 0);
-    obj_corners[2] = cv::Point(TEMPLATE_COLS, TEMPLATE_ROWS); 
-    obj_corners[3] = cv::Point(0, TEMPLATE_ROWS);
+    obj_corners[1] = cv::Point(template_img.cols, 0);
+    obj_corners[2] = cv::Point(template_img.cols, template_img.rows);
+    obj_corners[3] = cv::Point(0, template_img.rows);
     std::vector<cv::Point2f> scene_corners(4);
 
     // Define scene_corners using Homography
@@ -345,20 +346,19 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     // Define a contour using the scene_corners
     std::vector<cv::Point2f> contour;
     for (int i = 0; i < 4; i++)
-	    contour.push_back(scene_corners[i] + cv::Point2f(TEMPLATE_COLS, 0));
+	    contour.push_back(scene_corners[i] + cv::Point2f(template_img.cols, 0));
     
     
     double area = cv::contourArea(contour);
-    if (area >  TEMPLATE_COLS*TEMPLATE_ROWS || area < MIN_AREA) // larger than template or very small, disregard.
+    if (area >  template_img.cols*template_img.rows || area < MIN_AREA) // larger than template or very small, disregard.
         return 0;
-       
 
     int num_best_matches = 0;
 
     // Check if the good match is inside the contour.
-    for (int i = 0; i < good_matches.size(); i++)
+    for (auto & match : good_matches)
     {
-        cv::Point2f matched_point = scene_features.keypoints[good_matches[i].trainIdx].pt + cv::Point2f(TEMPLATE_COLS, 0);
+        cv::Point2f matched_point = scene_features.keypoints[match.trainIdx].pt + cv::Point2f(template_img.cols, 0);
         if (cv::pointPolygonTest(contour, matched_point, false) > 0)
             num_best_matches++;
     }

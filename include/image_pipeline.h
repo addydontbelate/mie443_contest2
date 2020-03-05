@@ -5,13 +5,13 @@
 #include <opencv2/core.hpp>
 #include <cv.h>
 #include <cv_bridge/cv_bridge.h>
-#include <fstream>
 #include <chrono>
 #include "opencv2/highgui.hpp"
 #include "opencv2/calib3d.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/imgproc.hpp"
 #include "boxes.h"
+#include "logger.h"
 
 // timer macros
 #define TIME std::chrono::time_point<std::chrono::system_clock>
@@ -27,7 +27,7 @@
 #define MIN_AREA 100
 
 // log file
-#define LOG_FILE "/home/thursday/Desktop/vision_log.txt"
+#define VISION_LOG_FILE "/home/thursday/Desktop/vision_log.txt"
 
 // possible template IDs
 enum TEMPLATE
@@ -39,6 +39,8 @@ enum TEMPLATE
     RICE_KRISP = 3
 };
 
+const std::string TEMPLATE_NAME[] = {"BLANK", "RAISIN_BRAN", "CIN_TOAST", "RICE_KRISP"};
+
 struct ImageFeatures
 {
     cv::Mat descriptors;
@@ -48,7 +50,7 @@ struct ImageFeatures
 class ImagePipeline
 {
  private:
-    std::ofstream logfile;
+    Logger logger;
     cv::Mat scene_img;
     bool is_valid;
     image_transport::Subscriber sub;
@@ -62,11 +64,10 @@ class ImagePipeline
     void match_to_templates_homog(const Boxes&);
     int match_to_template_flann_dist(const ImageFeatures&, const ImageFeatures&);
     int match_to_template_flann_knn(const ImageFeatures&, const ImageFeatures&);
-    int match_to_template_homog(const ImageFeatures&, const ImageFeatures&);
+    int match_to_template_homog(const ImageFeatures&, const cv::Mat&, const ImageFeatures&);
 
  public:
     explicit ImagePipeline(ros::NodeHandle& n, const Boxes& boxes);
     void image_callback(const sensor_msgs::ImageConstPtr& msg);
     int get_template_ID(const Boxes& boxes);
-    ~ImagePipeline() { logfile.close(); }
 };
