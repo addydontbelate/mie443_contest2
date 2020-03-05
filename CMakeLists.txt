@@ -13,12 +13,15 @@ find_package(catkin REQUIRED COMPONENTS
     gazebo_ros
 )
 find_package(orocos_kdl REQUIRED)
+find_package(Boost REQUIRED)
 
 catkin_package()
 
 include_directories(include  
     ${catkin_INCLUDE_DIRS}  
-    ${OpenCV_INCLUDE_DIRS})
+    ${OpenCV_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 # Contest 2 Executable
 add_executable(contest2 
@@ -30,7 +33,8 @@ add_executable(contest2
     include/logger.h)
 target_link_libraries(contest2 
     ${catkin_LIBRARIES}  
-    ${OpenCV_LIBRARIES}  
+    ${OpenCV_LIBRARIES}
+    ${Boost_LIBRARIES}  
     orocos-kdl)
 
 # Webcam Publisher Executable

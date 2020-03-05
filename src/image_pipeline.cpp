@@ -5,7 +5,7 @@
 // #define IMAGE_TOPIC "camera/image" // webcam
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
-{h
+{
     image_transport::ImageTransport it(n);
     sub = it.subscribe(IMAGE_TOPIC, 1, &ImagePipeline::image_callback, this);
     is_valid = false;
@@ -300,7 +300,7 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
 
     double max_dist = 0; double min_dist = 100;
 
-    //-- Quick calculation of max and min distances between keypoints
+    // calculate max and min distances between keypoints
     for (int i = 0; i < template_features.descriptors.rows; i++)
     { 
         double dist = matches[i].distance;
@@ -308,21 +308,18 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
         if (dist > max_dist) max_dist = dist;
     }
 
-    //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+    // get "good" candidate matches (i.e. distance is less than 3*min_dist)
     std::vector<cv::DMatch> good_matches;
-
     for (int i = 0; i < template_features.descriptors.rows; i++)
     { 
         if (matches[i].distance < 3*min_dist)
             good_matches.push_back( matches[i]);
     }
 
-    /***
-     * We have completed the matches. In the next section of code we will attempt to fit a
-     * bounding box over the identified object in the scene image.
-     */
+    // having completed the matches, we will attempt to fit a
+    // bounding box over the identified object in the scene image.
 
-    //-- Localize the object
+    // localize the object
     std::vector<cv::Point2f> obj;
     std::vector<cv::Point2f> scene;
 
@@ -333,9 +330,12 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
         scene.push_back(scene_features.keypoints[match.trainIdx].pt);
     }
 
+    // compute homography from scene to object
     cv::Mat H = cv::findHomography(obj, scene, cv::RANSAC);
+    if (H.rows == 0 && H.cols == 0)
+        return 0;
 
-    //-- Get the corners from the image_1 ( the object to be "detected" )
+    // get corners from the template to be "detected"
     std::vector<cv::Point2f> obj_corners(4);
     obj_corners[0] = cv::Point(0,0); 
     obj_corners[1] = cv::Point(template_img.cols, 0);
@@ -343,25 +343,22 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     obj_corners[3] = cv::Point(0, template_img.rows);
     std::vector<cv::Point2f> scene_corners(4);
 
-    if (H.rows == 0 && H.cols == 0)
-        return 0;
-        
-    // Define scene_corners using Homography        
+    // define scene_corners using the homography        
     cv::perspectiveTransform(obj_corners, scene_corners, H);
 
-    // Define a contour using the scene_corners
+    // define a contour using the scene_corners
     std::vector<cv::Point2f> contour;
     for (int i = 0; i < 4; i++)
 	    contour.push_back(scene_corners[i] + cv::Point2f(template_img.cols, 0));
-    
-    
+
+    // check if area is permissiable for a "good" match
+    // i.e., disregard if area is larger than template or very small
     double area = cv::contourArea(contour);
-    if (area >  template_img.cols*template_img.rows || area < MIN_AREA) // larger than template or very small, disregard.
+    if (area >  template_img.cols*template_img.rows || area < MIN_AREA)
         return 0;
-
+    
+    // check if the good match is inside the contour to compute the "valid" match candidates
     int num_best_matches = 0;
-
-    // Check if the good match is inside the contour.
     for (auto & match : good_matches)
     {
         cv::Point2f matched_point = scene_features.keypoints[match.trainIdx].pt + cv::Point2f(template_img.cols, 0);
@@ -369,10 +366,5 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
             num_best_matches++;
     }
 
-    /***
-     * In this section of the code we use a chosen heuristic to decided how good the match
-     * is the to given template.
-     * One such heuristic is the absolute number of good_matches found.
-     */
     return num_best_matches;
 }
