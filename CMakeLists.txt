@@ -24,9 +24,10 @@ include_directories(include
 add_executable(contest2 
     src/contest2.cpp
     src/boxes.cpp
-    src/Robot.cpp
+    src/robot.cpp
+    src/navigation.cpp
     src/robot_pose.cpp
-        src/image_pipeline.cpp)
+    src/image_pipeline.cpp)
 target_link_libraries(contest2 
     ${catkin_LIBRARIES}  
     ${OpenCV_LIBRARIES}  
