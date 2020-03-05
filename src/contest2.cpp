@@ -33,11 +33,10 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         ros::spinOnce();
-        /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robot_pose.x, robot_pose.y, robot_pose.phi
         img_pipeline.get_template_ID(boxes);
-        ros::Duration(5).sleep();
+        ros::Duration(20).sleep();
     }
 
     exit(EXIT_SUCCESS);
