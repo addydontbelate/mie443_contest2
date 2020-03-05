@@ -16,7 +16,7 @@
 // timer macros
 #define TIME std::chrono::time_point<std::chrono::system_clock>
 #define CLOCK std::chrono::system_clock
-#define TIME_S std::chrono::duration_cast<std::chrono::seconds>
+#define TIME_US std::chrono::duration_cast<std::chrono::microseconds>
 
 // FLANN-based keypoint matching constants
 #define NUM_REMATCH 2
