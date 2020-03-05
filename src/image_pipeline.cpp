@@ -70,7 +70,7 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     {
         // send current scene
         cv::imshow("view", scene_img);
-        cv::waitKey(500); // show for some time
+        cv::waitKey(200); // show for some time
 
         // find a match and update templateID
         match_to_templates_flann_dist(boxes);
@@ -81,12 +81,12 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)
     {
         cv::imshow("view", boxes.templates[templateID-1]);
-        cv::waitKey(500); // display detected template for some time
+        cv::waitKey(200); // display detected template for some time
     }
     else if (templateID == TEMPLATE::BLANK)
     {
         cv::imshow("view",cv::Mat(400, 400, CV_8UC3, cv::Scalar(255, 255, 255)));
-        cv::waitKey(500); // display white blank image for some time
+        cv::waitKey(200); // display white blank image for some time
     }
     else
         ROS_WARN("[IMG_PIPE] Could not assign template ID; sending uninitialized ID!");

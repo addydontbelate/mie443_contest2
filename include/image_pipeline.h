@@ -39,7 +39,7 @@ enum TEMPLATE
     RICE_KRISP = 3
 };
 
-const std::string TEMPLATE_NAME[] = {"BLANK", "RAISIN_BRAN", "CIN_TOAST", "RICE_KRISP"};
+const std::string TEMPLATE_NAME[] = {"Blank", "Raisin Bran", "Cinnamon Toast Crunch", "Rice Krispies"};
 
 struct ImageFeatures
 {
