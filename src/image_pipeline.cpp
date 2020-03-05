@@ -209,7 +209,7 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
 
     // match against box object/template features
     int rematch_tries = 0, box_idx = 0;
-    std::vector<double> num_matches(box_features.size(), 0);
+    std::vector<int> num_matches(box_features.size(), 0);
 
     for (const auto& template_features : box_features)
     {
@@ -343,7 +343,10 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     obj_corners[3] = cv::Point(0, template_img.rows);
     std::vector<cv::Point2f> scene_corners(4);
 
-    // Define scene_corners using Homography
+    if (H.rows == 0 && H.cols == 0)
+        return 0;
+        
+    // Define scene_corners using Homography        
     cv::perspectiveTransform(obj_corners, scene_corners, H);
 
     // Define a contour using the scene_corners
