@@ -1,8 +1,8 @@
 #include <image_pipeline.h>
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
-// #define IMAGE_TOPIC "camera/image" // webcam
+// #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect
+#define IMAGE_TOPIC "camera/image" // webcam
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
 {
@@ -89,14 +89,14 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         cv::waitKey(1000); // display detected template for 1 second
     }
     else
-        ROS_ERROR("[IMG_PIPE] Could not assign template ID; sending uninitialized ID!");
+        ROS_WARN("[IMG_PIPE] Could not assign template ID; sending uninitialized ID!");
 
     return templateID;
 }
 
 void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
 {
-    uint64_t seconds_elapsed = 0.0;
+    uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
 
     // detect scene features
@@ -142,13 +142,13 @@ void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
     }
 
     // print to log
-    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logger.write("[FLANN DIST THRESH] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
+    time_elapsed = TIME_US(CLOCK::now()-start).count();
+    logger.write("[FLANN DIST THRESH] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(time_elapsed) + " us\n");
 }
 
 void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
 {
-    uint64_t seconds_elapsed = 0.0;
+    uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
 
     ImageFeatures scene_features;
@@ -193,13 +193,13 @@ void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
     }
 
     // print to log
-    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logger.write("[FLANN KNN RATIO] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
+    time_elapsed = TIME_US(CLOCK::now()-start).count();
+    logger.write("[FLANN KNN RATIO] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(time_elapsed) + " us\n");
 }
 
 void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
 {
-    uint64_t seconds_elapsed = 0.0;
+    uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
 
     ImageFeatures scene_features;
@@ -250,8 +250,8 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
     }
 
     // print to log
-    seconds_elapsed = TIME_S(CLOCK::now()-start).count();
-    logger.write("[HOMOG] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(seconds_elapsed) + " s\n");
+    time_elapsed = TIME_US(CLOCK::now()-start).count();
+    logger.write("[HOMOG] Detetcted " + TEMPLATE_NAME[templateID] + " in " + std::to_string(time_elapsed) + " us\n");
 }
 
 int ImagePipeline::match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& scene_features)
