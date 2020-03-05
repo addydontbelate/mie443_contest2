@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     ImagePipeline img_pipeline(nh, boxes);
     
     // execute strategy FSM
-    ros::Rate loop_rate(10); // run at 10 Hz
+    ros::Rate loop_rate(0.05); // run at 0.05 Hz (for testing)
     while(ros::ok())
     {
         ros::spinOnce();
