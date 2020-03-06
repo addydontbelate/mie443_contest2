@@ -24,7 +24,7 @@ class Navigation
     static bool move_to_goal(float goal_x, float goal_y, float goal_phi);
     void compute_opt_seq();
     std::vector<std::vector<float>> get_goal_seq();
-    int get_obj_ID(std::vector<float> obj);
+    int get_obj_ID(const std::vector<float>& obj);
     void set_obj_visited(int obj_opt_seq_idx);
     bool any_unvisited_obj(); 
     Navigation(ros::NodeHandle& nh, const Boxes& boxes);
