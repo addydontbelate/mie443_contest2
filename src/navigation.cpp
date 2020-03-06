@@ -2,7 +2,8 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <tf/transform_datatypes.h>
 #include <algorithm>
-#include <math.h>
+#include <numeric>
+#include <cmath>
 #include "navigation.h"
 
 Navigation::Navigation(ros::NodeHandle& nh, const Boxes& boxes)
@@ -70,18 +71,16 @@ void Navigation::compute_opt_seq()
 
     // step 1: compute distances between all objectives (including the start position)
     std::vector<std::vector<double>> dist_bw_obj(obj_unvisited.size() + 1, std::vector<double>(obj_unvisited.size() + 1, 0.0));
-    std::vector<std::vector<float>> compute_obj {{rob_pose.x, rob_pose.y}}; // starts with current position
+    std::vector<std::vector<float>> compute_obj {{rob_pose.x, rob_pose.y, rob_pose.phi}};       // starts with current position
     compute_obj.insert(compute_obj.end(), obj_unvisited.begin(), obj_unvisited.end());
-    compute_obj.push_back({init_rob_pose.x, init_rob_pose.y, init_rob_pose.phi});
+    compute_obj.push_back({init_rob_pose.x, init_rob_pose.y, init_rob_pose.phi});               // ends with ending position (init_rob_pose)
 
-    float x_diff = 0.0;
-    float y_diff = 0.0;
     for(int i = 0; i < dist_bw_obj.size(); i++) 
     {
         for(int j = i+1; j < dist_bw_obj.size(); j++) 
         {
-            x_diff = compute_obj[i][0] - compute_obj[j][0];
-            y_diff = compute_obj[i][1] - compute_obj[j][1];
+            float x_diff = compute_obj[i][0] - compute_obj[j][0];
+            float y_diff = compute_obj[i][1] - compute_obj[j][1];
             dist_bw_obj[i][j] = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
             dist_bw_obj[j][i] = dist_bw_obj[i][j];
         }
@@ -177,7 +176,7 @@ bool Navigation::any_unvisited_obj()
     return !(obj_unvisited.empty());
 }
 
-int Navigation::get_obj_ID(std::vector<float> obj)
+int Navigation::get_obj_ID(const std::vector<float>& obj)
 {
     if (obj_box_idx.find(obj) != obj_box_idx.end())
         return obj_box_idx[obj];
