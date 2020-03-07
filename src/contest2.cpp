@@ -9,9 +9,14 @@
 #define SUCCESS true
 #define FAILURE false
 #define NUM_REPLANS 2
+#define TIME_LIMIT 300 // 5 minutes
+
+// global timer
+uint64_t seconds_elapsed = 0.0;
+TIME rob_start;
 
 // helper function prototypes
-void classify_obj(ImagePipeline&, Boxes&, const std::vector<float>&, int, Logger&);
+bool classify_obj(ImagePipeline&, Boxes&, const std::vector<float>&, int, Logger&);
 
 int main(int argc, char** argv)
 {
@@ -27,7 +32,7 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    for(int i = 0; i < boxes.coords.size(); ++i)
+    for(int i = 0; i < boxes.coords.size(); i++)
         ROS_INFO("[Main] Box %d coordinates (x: %f, y: %f, z: %f)", i, 
             boxes.coords[i][0], boxes.coords[i][1], boxes.coords[i][2]);
 
@@ -38,10 +43,10 @@ int main(int argc, char** argv)
     logger.open(RESULT_FILEPATH);
     
     ros::Rate loop_rate(10); // run at 10 Hz
-    srand(time(0));
+    rob_start = CLOCK::now();
     
     // keep on executing strategy till there are no unvisited (and un-processed) objectives
-    while(ros::ok() && nav.any_unvisited_obj()) // TODO: && <time remaining>
+    while(ros::ok() && nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT)
     {
         // TODO: try 360 using contest 1 function and see if localization improves
         ros::spinOnce();
@@ -51,15 +56,14 @@ int main(int argc, char** argv)
         auto box_seq = nav.get_goal_seq();
 
         // step 2: follow the provided sequence
-        int seq_idx = 0;
-        for (const auto& box : box_seq)
+        for (int obj_idx = 0; obj_idx < box_seq.size(); obj_idx++)
         {
             int num_tries = 0;
-            int box_idx = nav.get_obj_ID(box);
-            if (nav.move_to_goal(box[0], box[1], box[2]) == SUCCESS)
+            int box_idx = nav.get_obj_ID(box_seq[obj_idx]);
+            if (nav.move_to_goal(box_seq[obj_idx][0], box_seq[obj_idx][1], box_seq[obj_idx][2]) == SUCCESS)
             {
-                nav.set_obj_visited(seq_idx);    
-                classify_obj(img_pipeline, boxes, box, box_idx, logger);
+                if (classify_obj(img_pipeline, boxes, box_seq[obj_idx], box_idx, logger))
+                    nav.set_obj_visited(obj_idx);
             }
             else
                 // try replanning; if still fail, skip and move to next item in sequence
@@ -67,26 +71,22 @@ int main(int argc, char** argv)
                 {
                     ROS_ERROR("[MAIN] move_to_goal() failed! Trying to replan!");
 
-                    // nudge a little in a random walk style
-                    int delta_x = 0, delta_y = 0;
-                    while (delta_x == 0 && delta_y == 0) // avoid delta_x = delta_y = 0
-                    {
-                        delta_x  = (int(rand()%3) - 1);
-                        delta_y  = (int(rand()%3) - 1);
-                    }
-                    nav.move_to_goal(box[0] + delta_x*0.3, box[1] + delta_y*0.3, box[2]);
+                    // iteratively try moving a closer to the box by 0.1m in each replan
+                    float phi = box_seq[obj_idx][3];
+                    float x = box_seq[obj_idx][0] - num_tries*0.1*cos(phi);
+                    float y = box_seq[obj_idx][1] - num_tries*0.1*sin(phi);
 
-                    if (nav.move_to_goal(box[0], box[1], box[2]) == SUCCESS)
+                    if (nav.move_to_goal(x, y, phi) == SUCCESS)
                     {
-                        nav.set_obj_visited(seq_idx);
-                        classify_obj(img_pipeline, boxes, box, box_idx, logger);
-                        break;
+                        if (classify_obj(img_pipeline, boxes, box_seq[obj_idx], box_idx, logger))
+                        {
+                            nav.set_obj_visited(obj_idx);
+                            break;
+                        }
                     }
                     else    
                         num_tries++;
                 }
-            
-            seq_idx++;
         }
 
         loop_rate.sleep();
@@ -95,14 +95,12 @@ int main(int argc, char** argv)
     exit(EXIT_SUCCESS);
 }
 
-// TODO: right now, the FSM disregards any failure in image pipeline. make it not mark as visisted if
-//  classification fails!
-void classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<float>& box, int box_idx, Logger& logger)
+bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<float>& box, int box_idx, Logger& logger)
 {
     // take a picture and get template ID; skip process if invalid ID received.
     int ID = img_pipeline.get_template_ID(boxes);
     if (ID == -1)
-        return;
+        return false;
 
     // print to log file
     logger.write("Box: " + std::to_string(box_idx) + "\n");
@@ -113,4 +111,6 @@ void classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<f
         logger.write(TEMPLATE_NAME[ID] + " was found\n");
     else
         logger.write("Nothing was found\n");
+
+    return true;
 }

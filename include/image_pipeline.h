@@ -16,6 +16,7 @@
 // timer macros
 #define TIME std::chrono::time_point<std::chrono::system_clock>
 #define CLOCK std::chrono::system_clock
+#define TIME_S std::chrono::duration_cast<std::chrono::seconds>
 #define TIME_US std::chrono::duration_cast<std::chrono::microseconds>
 
 // FLANN-based keypoint matching constants
@@ -27,7 +28,7 @@
 #define MIN_AREA 100
 
 // log file
-#define VISION_LOG_FILE "/home/thursday/Desktop/vision_log.txt"
+#define VIS_LOG_FILEPATH "/home/thursday/Desktop/vision_log.txt"
 
 // possible template IDs
 enum TEMPLATE
