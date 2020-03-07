@@ -23,7 +23,7 @@
 #define NUM_REMATCH 2
 #define REMATCH_THRESH 30
 #define GOOD_MATCH_DIST 0.2
-#define MIN_HESSIAN 400
+#define MIN_HESSIAN 600
 #define RATIO_THRESH 0.7
 #define MIN_AREA 100
 
