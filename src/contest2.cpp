@@ -55,26 +55,28 @@ int main(int argc, char** argv)
         nav.compute_opt_seq();
         auto box_seq = nav.get_goal_seq();
 
-        // step 2: follow the provided sequence
-        for (int obj_idx = 0; obj_idx < box_seq.size(); obj_idx++)
+        // step 2: visit all unvisited objectives in the optimal sequence
+        for (int obj_idx = 0; obj_idx < box_seq.size()-1; obj_idx++)
         {
+            ros::spinOnce();
             int num_tries = 0;
             int box_idx = nav.get_obj_ID(box_seq[obj_idx]);
+
             if (nav.move_to_goal(box_seq[obj_idx][0], box_seq[obj_idx][1], box_seq[obj_idx][2]) == SUCCESS)
             {
                 if (classify_obj(img_pipeline, boxes, box_seq[obj_idx], box_idx, logger))
                     nav.set_obj_visited(obj_idx);
             }
             else
-                // try replanning; if still fail, skip and move to next item in sequence
+                // try re-planning; if still fail, skip and move to next item in sequence
                 while (num_tries < NUM_REPLANS)
                 {
                     ROS_ERROR("[MAIN] move_to_goal() failed! Trying to replan!");
 
-                    // iteratively try moving a closer to the box by 0.1m in each replan
+                    // iteratively try moving a closer to the box by 0.1m in each re-plan
                     float phi = box_seq[obj_idx][3];
-                    float x = box_seq[obj_idx][0] - num_tries*0.1*cos(phi);
-                    float y = box_seq[obj_idx][1] - num_tries*0.1*sin(phi);
+                    float x = box_seq[obj_idx][0] - (num_tries+1)*0.1*cos(phi);
+                    float y = box_seq[obj_idx][1] - (num_tries+1)*0.1*sin(phi);
 
                     if (nav.move_to_goal(x, y, phi) == SUCCESS)
                     {
@@ -87,7 +89,13 @@ int main(int argc, char** argv)
                     else    
                         num_tries++;
                 }
+
+            loop_rate.sleep();
         }
+
+        // step 3: go back to the initial position
+        if (nav.move_to_goal(box_seq.back()[0], box_seq.back()[1], box_seq.back()[2]))
+            exit(EXIT_SUCCESS);
 
         loop_rate.sleep();
     }
