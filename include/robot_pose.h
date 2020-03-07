@@ -1,6 +1,17 @@
 #pragma once
 
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <chrono>
+
+// timer macros
+#define TIME std::chrono::time_point<std::chrono::system_clock>
+#define CLOCK std::chrono::system_clock
+#define TIME_S std::chrono::duration_cast<std::chrono::seconds>
+#define TIME_US std::chrono::duration_cast<std::chrono::microseconds>
+
+// global time keeper (integrated into pose_callback)
+extern uint64_t seconds_elapsed;
+extern TIME rob_start;
 
 class RobotPose
 {

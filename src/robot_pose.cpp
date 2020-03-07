@@ -13,4 +13,5 @@ void RobotPose::pose_callback(const geometry_msgs::PoseWithCovarianceStamped& ms
 	phi = static_cast<float>(tf::getYaw(msg.pose.pose.orientation));
 	x = msg.pose.pose.position.x;
 	y = msg.pose.pose.position.y;
+    seconds_elapsed = TIME_S(CLOCK::now()-rob_start).count();
 }
