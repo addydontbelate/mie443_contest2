@@ -18,6 +18,9 @@ TIME rob_start;
 // helper function prototypes
 bool classify_obj(ImagePipeline&, Boxes&, const std::vector<float>&, int, Logger&);
 
+// environment tags tracker
+std::unordered_map<int, int> classify_obj_id;
+
 int main(int argc, char** argv)
 {
     // setup ROS
@@ -95,7 +98,10 @@ int main(int argc, char** argv)
 
         // step 3: go back to the initial position
         if (nav.move_to_goal(box_seq.back()[0], box_seq.back()[1], box_seq.back()[2]))
+        {
+            ROS_INFO("[MAIN] Done!");
             exit(EXIT_SUCCESS);
+        }
 
         loop_rate.sleep();
     }
@@ -109,16 +115,20 @@ bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<f
     int ID = img_pipeline.get_template_ID(boxes);
     if (ID == -1)
         return false;
+    classify_obj_id[ID]++;
 
-    // print to log file
+    // print box details to log file
     logger.write("Box: " + std::to_string(box_idx) + "\n");
     logger.write("At location ("+ std::to_string(box[0]) + ", " + std::to_string(box[1]) + 
         ", " + std::to_string(box[2]) + ")\n");
-    
-    if (ID != 0)
+
+    // print template classification results to log file
+    if (ID == 0)
+        logger.write("Nothing was found\n");
+    else if (classify_obj_id[ID] == 1)
         logger.write(TEMPLATE_NAME[ID] + " was found\n");
     else
-        logger.write("Nothing was found\n");
+        logger.write(TEMPLATE_NAME[ID] + " was found again (duplicate)\n");
 
     return true;
 }
