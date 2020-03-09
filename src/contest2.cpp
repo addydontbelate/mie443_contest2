@@ -28,9 +28,8 @@ int main(int argc, char** argv)
     
     ros::Rate loop_rate(0.065); // run every ~15s
 
-    while(ros::ok() /*&& nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT*/)
+    while(ros::ok())
     {
-        // TODO: try 360 using contest 1 function and see if localization improves
         ros::spinOnce();
         img_pipeline.get_template_ID(boxes);
         loop_rate.sleep();
