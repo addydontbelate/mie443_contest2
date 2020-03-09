@@ -282,9 +282,9 @@ int ImagePipeline::match_to_template_flann_knn(const ImageFeatures& template_fea
 
     // apply ratio test (D. Lowe's Paper)
     int num_good_matches = 0;
-    for (size_t i = 0; i < knn_matches.size(); i++)
+    for (auto & knn_match : knn_matches)
     {
-        if (knn_matches[i][0].distance < RATIO_THRESH*knn_matches[i][1].distance)
+        if (knn_match[0].distance < RATIO_THRESH*knn_match[1].distance)
             num_good_matches++;
     }
 
