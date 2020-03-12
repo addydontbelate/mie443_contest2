@@ -69,6 +69,7 @@ int main(int argc, char** argv)
             ros::spinOnce();
             int num_tries = 0;
             int box_idx = nav.get_obj_ID(obj_idx);
+            ROS_INFO("[MAIN] Moving to Box %d", box_idx);
 
             if (nav.move_to_goal(box_seq[obj_idx][0], box_seq[obj_idx][1], box_seq[obj_idx][2]) == SUCCESS)
             {
