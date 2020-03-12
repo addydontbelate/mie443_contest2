@@ -48,12 +48,14 @@ int main(int argc, char** argv)
     ros::Rate loop_rate(10); // run at 10 Hz
     rob_start = CLOCK::now();
     
+    // step 0: localize
+    ros::spinOnce();
+    nav.localize();
+
     // keep on executing strategy till there are no unvisited (and un-processed) objectives
     while(ros::ok() && nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT)
     {
-        // step 0: localize
         ros::spinOnce();
-        nav.localize();
 
         // step 1: compute optimal sequence
         nav.compute_opt_seq();
