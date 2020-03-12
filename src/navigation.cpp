@@ -18,8 +18,17 @@ Navigation::Navigation(ros::NodeHandle& nh, const Boxes& boxes)
     }
     
     // initial robot pose + subscriber
-    ros::Subscriber amcl_sub = nh.subscribe("/amcl_pose", 1, &RobotPose::pose_callback, &rob_pose);
-    ros::spinOnce();
+    amcl_sub = nh.subscribe("/amcl_pose", 1, &RobotPose::pose_callback, &rob_pose);
+}
+
+void Navigation::localize()
+{
+    ros::Rate loop_rate(10); // run at 10 Hz
+    // store the initial position after being updated by amcl
+    while (init_rob_pose == rob_pose && init_rob_pose == RobotPose(0.0,0.0,0.0)) {
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
     init_rob_pose = rob_pose;
 }
 
@@ -140,7 +149,7 @@ void Navigation::compute_opt_seq()
         float phi = obj_opt_seq[i][2];
         goal_pose[0] = obj_opt_seq[i][0] + cos(phi)*IMG_CAPTURE_OFFSET;
         goal_pose[1] = obj_opt_seq[i][1] + sin(phi)*IMG_CAPTURE_OFFSET;
-        goal_pose[2] = phi;
+        goal_pose[2] = phi - M_PI;
         goal_opt_seq.push_back(goal_pose);
     }
     goal_opt_seq.push_back(obj_opt_seq.back());
@@ -176,10 +185,10 @@ bool Navigation::any_unvisited_obj()
     return !(obj_unvisited.empty());
 }
 
-int Navigation::get_obj_ID(const std::vector<float>& obj)
+int Navigation::get_obj_ID(const int obj_idx)
 {
-    if (obj_box_idx.find(obj) != obj_box_idx.end())
-        return obj_box_idx[obj];
+    if (obj_box_idx.find(obj_opt_seq[obj_idx]) != obj_box_idx.end())
+        return obj_box_idx[obj_opt_seq[obj_idx]];
     
     // else
     ROS_ERROR("[NAV] Not able to find the objective ID corresponding to the given coordinates!");

@@ -13,6 +13,7 @@
 class Navigation
 {
  private:
+    ros::Subscriber amcl_sub;
     RobotPose rob_pose;
     RobotPose init_rob_pose;
     std::vector<std::vector<float>> obj_unvisited; 
@@ -22,10 +23,11 @@ class Navigation
     std::map<std::vector<float>, int> obj_box_idx;   // corresponding box ids for objectives
 
  public:
+    void localize();
     static bool move_to_goal(float goal_x, float goal_y, float goal_phi);
     void compute_opt_seq();
     std::vector<std::vector<float>> get_goal_seq();
-    int get_obj_ID(const std::vector<float>& obj);
+    int get_obj_ID(int obj_idx);
     void set_obj_visited(int obj_opt_seq_idx);
     bool any_unvisited_obj(); 
     Navigation(ros::NodeHandle& nh, const Boxes& boxes);
