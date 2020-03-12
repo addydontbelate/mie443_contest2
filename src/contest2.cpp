@@ -49,6 +49,7 @@ int main(int argc, char** argv)
     rob_start = CLOCK::now();
     
     // step 0: localize
+    std::vector<float> init_pos = {0.0, 0.0, 0.0}; // (x,y,phi)
     ros::spinOnce();
     nav.localize();
 
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
         // step 1: compute optimal sequence
         nav.compute_opt_seq();
         auto box_seq = nav.get_goal_seq();
+        init_pos = box_seq.back();
 
         // step 2: visit all unvisited objectives in the optimal sequence
         for (int obj_idx = 0; obj_idx < box_seq.size()-1; obj_idx++)
@@ -79,7 +81,7 @@ int main(int argc, char** argv)
                 {
                     ROS_ERROR("[MAIN] move_to_goal() failed! Trying to replan!");
 
-                    // iteratively try moving a closer to the box by 0.1m in each re-plan
+                    // iteratively try moving closer to the box by 0.1m in each re-plan
                     float phi = box_seq[obj_idx][3];
                     float x = box_seq[obj_idx][0] - (num_tries+1)*0.1*cos(phi);
                     float y = box_seq[obj_idx][1] - (num_tries+1)*0.1*sin(phi);
@@ -99,17 +101,18 @@ int main(int argc, char** argv)
             loop_rate.sleep();
         }
 
-        // step 3: go back to the initial position
-        if (nav.move_to_goal(box_seq.back()[0], box_seq.back()[1], box_seq.back()[2]))
-        {
-            ROS_INFO("[MAIN] Done!");
-            return EXIT_SUCCESS;
-        }
-
         loop_rate.sleep();
     }
 
-    return EXIT_SUCCESS;
+    // step 3: once done, go back to the initial position
+    if (nav.move_to_goal(init_pos[0], init_pos[1], init_pos[2]))
+    {
+        ROS_INFO("[MAIN] Done!");
+        return EXIT_SUCCESS;
+    }
+
+    ROS_INFO("[MAIN] Failed to reach the initial position!");
+    return EXIT_FAILURE;
 }
 
 bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<float>& box, int box_idx, Logger& logger)
