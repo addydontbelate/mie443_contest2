@@ -21,7 +21,7 @@
 
 // FLANN-based keypoint matching constants
 #define NUM_REMATCH 2
-#define REMATCH_THRESH 20
+#define REMATCH_THRESH 25
 #define GOOD_MATCH_DIST 0.2
 #define MIN_HESSIAN 600
 #define RATIO_THRESH 0.7
