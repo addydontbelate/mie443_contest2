@@ -15,3 +15,10 @@ void RobotPose::pose_callback(const geometry_msgs::PoseWithCovarianceStamped& ms
 	y = msg.pose.pose.position.y;
     seconds_elapsed = TIME_S(CLOCK::now()-rob_start).count();
 }
+
+bool RobotPose::operator==(const RobotPose& rhs) const 
+{
+	if (this->x == rhs.x && this->y == rhs.y && this->phi == rhs.phi)
+		return true;
+	return false;
+}

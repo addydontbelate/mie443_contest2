@@ -51,8 +51,9 @@ int main(int argc, char** argv)
     // keep on executing strategy till there are no unvisited (and un-processed) objectives
     while(ros::ok() && nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT)
     {
-        // TODO: try 360 using contest 1 function and see if localization improves
+        // step 0: localize
         ros::spinOnce();
+        nav.localize();
 
         // step 1: compute optimal sequence
         nav.compute_opt_seq();
@@ -63,11 +64,11 @@ int main(int argc, char** argv)
         {
             ros::spinOnce();
             int num_tries = 0;
-            int box_idx = nav.get_obj_ID(box_seq[obj_idx]);
+            int box_idx = nav.get_obj_ID(obj_idx);
 
             if (nav.move_to_goal(box_seq[obj_idx][0], box_seq[obj_idx][1], box_seq[obj_idx][2]) == SUCCESS)
             {
-                if (classify_obj(img_pipeline, boxes, box_seq[obj_idx], box_idx, logger))
+                if (classify_obj(img_pipeline, boxes, boxes.coords[box_idx], box_idx, logger))
                     nav.set_obj_visited(obj_idx);
             }
             else
@@ -100,13 +101,13 @@ int main(int argc, char** argv)
         if (nav.move_to_goal(box_seq.back()[0], box_seq.back()[1], box_seq.back()[2]))
         {
             ROS_INFO("[MAIN] Done!");
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
 
         loop_rate.sleep();
     }
 
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }
 
 bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<float>& box, int box_idx, Logger& logger)
@@ -118,7 +119,7 @@ bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<f
     classify_obj_id[ID]++;
 
     // print box details to log file
-    logger.write("Box: " + std::to_string(box_idx) + "\n");
+    logger.write("Box: " + std::to_string(box_idx+1) + "\n");
     logger.write("At location ("+ std::to_string(box[0]) + ", " + std::to_string(box[1]) + 
         ", " + std::to_string(box[2]) + ")\n");
 
