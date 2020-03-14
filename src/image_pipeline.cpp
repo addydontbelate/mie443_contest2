@@ -73,9 +73,9 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         cv::waitKey(200); // show for some time
 
         // find a match and update templateID
-        match_to_templates_flann_dist(boxes);
-        match_to_templates_flann_knn(boxes);
         match_to_templates_homog(boxes);
+//        match_to_templates_flann_dist(boxes);
+//        match_to_templates_flann_knn(boxes);
     }
 
     if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)

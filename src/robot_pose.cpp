@@ -18,7 +18,5 @@ void RobotPose::pose_callback(const geometry_msgs::PoseWithCovarianceStamped& ms
 
 bool RobotPose::operator==(const RobotPose& rhs) const 
 {
-	if (this->x == rhs.x && this->y == rhs.y && this->phi == rhs.phi)
-		return true;
-	return false;
+    return this->x == rhs.x && this->y == rhs.y && this->phi == rhs.phi;
 }
