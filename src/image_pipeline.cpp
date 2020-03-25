@@ -409,5 +409,8 @@ TEMPLATE ImagePipeline::get_majority_template(const std::vector<TEMPLATE>& match
     if (freq > matched_templates.size()/2) 
         return matched_templates[maj_idx]; 
     else
+    {
+        ROS_WARN("[IMG_PIPE] Classification failed! No majority found in results; skipping box.");
         return TEMPLATE::UNINITIALIZED;
+    }
 }

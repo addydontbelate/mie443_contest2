@@ -31,4 +31,5 @@ class Navigation
     void set_obj_visited(int obj_opt_seq_idx);
     bool any_unvisited_obj(); 
     Navigation(ros::NodeHandle& nh, const Boxes& boxes);
+    RobotPose get_init_pose();
 };

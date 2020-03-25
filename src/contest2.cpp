@@ -49,7 +49,6 @@ int main(int argc, char** argv)
     rob_start = CLOCK::now();
     
     // step 0: localize
-    std::vector<float> init_pos = {0.0, 0.0, 0.0}; // (x,y,phi)
     ros::spinOnce();
     nav.localize();
 
@@ -61,13 +60,11 @@ int main(int argc, char** argv)
         // step 1: compute optimal sequence
         nav.compute_opt_seq();
         auto box_seq = nav.get_goal_seq();
-        init_pos = box_seq.back();
 
         // step 2: visit all unvisited objectives in the optimal sequence
         for (int obj_idx = 0; obj_idx < box_seq.size()-1; obj_idx++)
         {
             ros::spinOnce();
-            int num_tries = 0;
             int box_idx = nav.get_obj_ID(obj_idx);
             ROS_INFO("[MAIN] Moving to Box %d", box_idx);
 
@@ -77,6 +74,9 @@ int main(int argc, char** argv)
                     nav.set_obj_visited(obj_idx);
             }
             else
+            {
+                int num_tries = 0;
+
                 // try re-planning; if still fail, skip and move to next item in sequence
                 while (num_tries < NUM_REPLANS)
                 {
@@ -98,6 +98,7 @@ int main(int argc, char** argv)
                     else    
                         num_tries++;
                 }
+            }
 
             loop_rate.sleep();
         }
@@ -106,7 +107,8 @@ int main(int argc, char** argv)
     }
 
     // step 3: once done, go back to the initial position
-    if (nav.move_to_goal(init_pos[0], init_pos[1], init_pos[2]))
+    RobotPose init_pose = nav.get_init_pose();
+    if (nav.move_to_goal(init_pose.x, init_pose.y, init_pose.phi))
     {
         ROS_INFO("[MAIN] Done!");
         return EXIT_SUCCESS;

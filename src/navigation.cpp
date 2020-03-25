@@ -25,7 +25,8 @@ void Navigation::localize()
 {
     ros::Rate loop_rate(10); // run at 10 Hz
     // store the initial position after being updated by amcl
-    while (init_rob_pose == rob_pose && init_rob_pose == RobotPose(0.0,0.0,0.0)) {
+    while (init_rob_pose == rob_pose && init_rob_pose == RobotPose(0.0,0.0,0.0)) 
+    {
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -193,4 +194,9 @@ int Navigation::get_obj_ID(const int obj_idx)
     // else
     ROS_ERROR("[NAV] Not able to find the objective ID corresponding to the given coordinates!");
     return -1;
+}
+
+RobotPose Navigation::get_init_pose()
+{
+    return init_rob_pose;
 }
