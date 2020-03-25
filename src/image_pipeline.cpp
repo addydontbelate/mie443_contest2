@@ -11,7 +11,7 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     is_valid = false;
     templateID = TEMPLATE::UNINITIALIZED;
     flann_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
-    logger.open(VIS_LOG_FILEPATH);
+    logger.open(VISLOG_FILEPATH);
     logger.write("\n\n************ NEW RUN *************");
     load_template_features(boxes);
 }

@@ -5,7 +5,7 @@
 #include "logger.h"
 
 // strategy definitions
-#define RESULT_FILEPATH "/home/turtlebot/Desktop/contest2_run.txt"
+#define RESULT_FILEPATH "/home/turtlebot/Desktop/contest2_log.txt"
 #define SUCCESS true
 #define FAILURE false
 #define NUM_REPLANS 2
