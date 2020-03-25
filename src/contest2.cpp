@@ -125,9 +125,9 @@ bool classify_obj(ImagePipeline& img_pipeline, Boxes& boxes, const std::vector<f
     classify_obj_id[ID]++;
 
     // print box details to log file
-    logger.write("Box: " + std::to_string(box_idx+1) + "\n");
+    logger.write("Box: " + std::to_string(box_idx+1));
     logger.write("At location ("+ std::to_string(box[0]) + ", " + std::to_string(box[1]) + 
-        ", " + std::to_string(box[2]) + ")\n");
+        ", " + std::to_string(box[2]) + ")");
 
     // print template classification results to log file
     if (ID == 0)

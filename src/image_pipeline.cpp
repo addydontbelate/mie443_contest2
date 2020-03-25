@@ -12,7 +12,7 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     templateID = TEMPLATE::UNINITIALIZED;
     flann_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
     logger.open(VIS_LOG_FILEPATH);
-    logger.write("\n\n************ NEW RUN *************\n");
+    logger.write("\n\n************ NEW RUN *************");
     load_template_features(boxes);
 }
 
@@ -73,9 +73,12 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         // cv::waitKey(200); // show for some time
 
         // find a match and update templateID
-        match_to_templates_flann_dist(boxes);
-        match_to_templates_flann_knn(boxes);
-        match_to_templates_homog(boxes);
+        std::vector<TEMPLATE> matched_templates;
+        matched_templates.push_back(match_to_templates_flann_dist(boxes));
+        matched_templates.push_back(match_to_templates_flann_knn(boxes));
+        matched_templates.push_back(match_to_templates_homog(boxes));
+        templateID = get_majority_template(matched_templates);
+        logger.write("\n");
     }
 
     if (templateID != TEMPLATE::BLANK && templateID != TEMPLATE::UNINITIALIZED)
@@ -94,10 +97,11 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     return templateID;
 }
 
-void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
+TEMPLATE ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
 {
     uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
+    TEMPLATE template_ID = TEMPLATE::UNINITIALIZED;
 
     // detect scene features
     ImageFeatures scene_features;
@@ -132,25 +136,28 @@ void ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
     // if at the end of rematching, best match was less than low match thresh, then return blank
     if (*max_match < REMATCH_THRESH)
     {
-        templateID = TEMPLATE::BLANK;
+        template_ID = TEMPLATE::BLANK;
     }
     else
     {
         // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
         int idx = max_match - num_matches.begin();
-        templateID = TEMPLATE(idx + 1);
+        template_ID = TEMPLATE(idx + 1);
     }
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
     logger.write("[FLANN DIST THRESH] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
-        " us> with <" + std::to_string(*max_match) + "> matches\n");
+        " us> with <" + std::to_string(*max_match) + "> matches");
+    
+    return template_ID;
 }
 
-void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
+TEMPLATE ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
 {
     uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
+    TEMPLATE template_ID = TEMPLATE::UNINITIALIZED;
 
     ImageFeatures scene_features;
     flann_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
@@ -184,25 +191,28 @@ void ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
     // if at the end of rematching, best match was less than low match thresh, then return blank
     if (*max_match < REMATCH_THRESH)
     {
-        templateID = TEMPLATE::BLANK;
+        template_ID = TEMPLATE::BLANK;
     }
     else
     {
         // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
         int idx = max_match - num_matches.begin();
-        templateID = TEMPLATE(idx + 1);
+        template_ID = TEMPLATE(idx + 1);
     }
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
     logger.write("[FLANN KNN RATIO] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
-        " us> with <" + std::to_string(*max_match) + "> matches\n");
+        " us> with <" + std::to_string(*max_match) + "> matches");
+    
+    return template_ID;
 }
 
-void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
+TEMPLATE ImagePipeline::match_to_templates_homog(const Boxes& boxes)
 {
     uint64_t time_elapsed = 0.0;
     TIME start = CLOCK::now();
+    TEMPLATE template_ID = TEMPLATE::UNINITIALIZED;
 
     ImageFeatures scene_features;
     flann_detector->detectAndCompute(scene_img, cv::Mat(), scene_features.keypoints, scene_features.descriptors);
@@ -242,19 +252,21 @@ void ImagePipeline::match_to_templates_homog(const Boxes& boxes)
     // if at the end of rematching, best match was less than low match thresh, then return blank
     if (*max_match < REMATCH_THRESH)
     {
-        templateID = TEMPLATE::BLANK;
+        template_ID = TEMPLATE::BLANK;
     }
     else
     {
         // template ID corresponds to idx of (maximum + 1) since BLANK is at 0 in TEMPLATE
         int idx = max_match - num_matches.begin();
-        templateID = TEMPLATE(idx + 1);
+        template_ID = TEMPLATE(idx + 1);
     }
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
     logger.write("[HOMOG] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
-        " us> with <" + std::to_string(*max_match) + "> matches\n");
+        " us> with <" + std::to_string(*max_match) + "> matches");
+    
+    return template_ID;
 }
 
 int ImagePipeline::match_to_template_flann_dist(const ImageFeatures& template_features, const ImageFeatures& scene_features)
@@ -282,7 +294,7 @@ int ImagePipeline::match_to_template_flann_knn(const ImageFeatures& template_fea
 
     // apply ratio test (D. Lowe's Paper)
     int num_good_matches = 0;
-    for (auto & knn_match : knn_matches)
+    for (const auto& knn_match : knn_matches)
     {
         if (knn_match[0].distance < RATIO_THRESH*knn_match[1].distance)
             num_good_matches++;
@@ -323,9 +335,9 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     std::vector<cv::Point2f> obj;
     std::vector<cv::Point2f> scene;
 
-    for (auto & match : good_matches)
+    for (const auto& match : good_matches)
     {
-        //-- Get the keypoints from the good matches
+        // get the keypoints from the good matches
         obj.push_back(template_features.keypoints[match.queryIdx].pt);
         scene.push_back(scene_features.keypoints[match.trainIdx].pt);
     }
@@ -359,7 +371,7 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     
     // check if the good match is inside the contour to compute the "valid" match candidates
     int num_best_matches = 0;
-    for (auto & match : good_matches)
+    for (const auto& match : good_matches)
     {
         cv::Point2f matched_point = scene_features.keypoints[match.trainIdx].pt + cv::Point2f(template_img.cols, 0);
         if (cv::pointPolygonTest(contour, matched_point, false) > 0)
@@ -367,4 +379,35 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
     }
 
     return num_best_matches;
+}
+
+TEMPLATE ImagePipeline::get_majority_template(const std::vector<TEMPLATE>& matched_templates)
+{
+    // find a majority in the results using Moore’s Voting algorithm
+    int maj_idx = 0;
+    for (int count = 1, i = 1; i < matched_templates.size(); i++) 
+    { 
+        if (matched_templates[maj_idx] == matched_templates[i]) 
+            count++; 
+        else
+            count--; 
+        
+        if (count == 0) 
+        { 
+            maj_idx = i; 
+            count = 1; 
+        } 
+    }
+
+    // make sure the frequency of the majority element is > n/2
+    int freq = 0; 
+    for (const auto& tmp : matched_templates) 
+      if (tmp == matched_templates[maj_idx]) 
+        freq++; 
+          
+    // if we dont have a majority, we send uninitialized
+    if (freq > matched_templates.size()/2) 
+        return matched_templates[maj_idx]; 
+    else
+        return TEMPLATE::UNINITIALIZED;
 }

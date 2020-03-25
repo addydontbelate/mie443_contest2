@@ -21,11 +21,11 @@
 
 // FLANN-based keypoint matching constants
 #define NUM_REMATCH 2
-#define REMATCH_THRESH 25
+#define REMATCH_THRESH 20
 #define GOOD_MATCH_DIST 0.2
-#define MIN_HESSIAN 600
-#define RATIO_THRESH 0.7
-#define MIN_AREA 100
+#define MIN_HESSIAN 400
+#define RATIO_THRESH 0.75
+#define MIN_AREA 75
 
 // log file
 #define VIS_LOG_FILEPATH "/home/turtlebot/Desktop/vision_log.txt"
@@ -60,12 +60,13 @@ class ImagePipeline
     cv::FlannBasedMatcher flann_matcher;
     TEMPLATE templateID;
     void load_template_features(const Boxes&);
-    void match_to_templates_flann_dist(const Boxes&);
-    void match_to_templates_flann_knn(const Boxes&);
-    void match_to_templates_homog(const Boxes&);
+    TEMPLATE match_to_templates_flann_dist(const Boxes&);
+    TEMPLATE match_to_templates_flann_knn(const Boxes&);
+    TEMPLATE match_to_templates_homog(const Boxes&);
     int match_to_template_flann_dist(const ImageFeatures&, const ImageFeatures&);
     int match_to_template_flann_knn(const ImageFeatures&, const ImageFeatures&);
     int match_to_template_homog(const ImageFeatures&, const cv::Mat&, const ImageFeatures&);
+    TEMPLATE get_majority_template(const std::vector<TEMPLATE>&);
 
  public:
     explicit ImagePipeline(ros::NodeHandle& n, const Boxes& boxes);
