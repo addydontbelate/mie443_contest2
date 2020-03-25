@@ -25,7 +25,7 @@
 #define GOOD_MATCH_DIST 0.2
 #define MIN_HESSIAN 400
 #define RATIO_THRESH 0.75
-#define MIN_AREA 75
+#define MIN_AREA 50
 
 // log file
 #define VISLOG_FILEPATH "/home/turtlebot/Desktop/vision_log.txt"

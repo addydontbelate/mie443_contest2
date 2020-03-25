@@ -72,7 +72,6 @@ bool Navigation::move_to_goal(float goal_x, float goal_y, float goal_phi)
     }
 }
 
-
 void Navigation::compute_opt_seq()
 {
     // step 0: clear any previous results
