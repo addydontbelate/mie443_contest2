@@ -72,7 +72,7 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         // cv::imshow("view", scene_img);
         // cv::waitKey(200); // show for some time
 
-        // find a match and update templateID
+        // find a match and update templateID based on majority (if it exists) for robustness
         std::vector<TEMPLATE> matched_templates;
         matched_templates.push_back(match_to_templates_flann_dist(boxes));
         matched_templates.push_back(match_to_templates_flann_knn(boxes));
@@ -147,7 +147,7 @@ TEMPLATE ImagePipeline::match_to_templates_flann_dist(const Boxes& boxes)
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
-    logger.write("[FLANN DIST THRESH] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
+    logger.write("[FLANN DIST THRESH] Detetcted <" + TEMPLATE_NAME[template_ID] + "> in <" + std::to_string(time_elapsed) + 
         " us> with <" + std::to_string(*max_match) + "> matches");
     
     return template_ID;
@@ -202,7 +202,7 @@ TEMPLATE ImagePipeline::match_to_templates_flann_knn(const Boxes& boxes)
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
-    logger.write("[FLANN KNN RATIO] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
+    logger.write("[FLANN KNN RATIO] Detetcted <" + TEMPLATE_NAME[template_ID] + "> in <" + std::to_string(time_elapsed) + 
         " us> with <" + std::to_string(*max_match) + "> matches");
     
     return template_ID;
@@ -263,7 +263,7 @@ TEMPLATE ImagePipeline::match_to_templates_homog(const Boxes& boxes)
 
     // print to log
     time_elapsed = TIME_US(CLOCK::now()-start).count();
-    logger.write("[HOMOG] Detetcted <" + TEMPLATE_NAME[templateID] + "> in <" + std::to_string(time_elapsed) + 
+    logger.write("[HOMOG] Detetcted <" + TEMPLATE_NAME[template_ID] + "> in <" + std::to_string(time_elapsed) + 
         " us> with <" + std::to_string(*max_match) + "> matches");
     
     return template_ID;
