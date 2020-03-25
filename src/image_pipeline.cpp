@@ -28,6 +28,10 @@ void ImagePipeline::load_template_features(const Boxes& boxes)
 
     if (box_features.empty())
         ROS_WARN("[IMG_PIPE] No templates were contained in boxes! No features added.");
+
+    /**** DEBUG ****/
+    srand(time(0));
+    /***************/
 }
 
 void ImagePipeline::image_callback(const sensor_msgs::ImageConstPtr& msg)
@@ -71,6 +75,10 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         // send current scene
         // cv::imshow("view", scene_img);
         // cv::waitKey(200); // show for some time
+
+        /*** DEBUG *****/
+        cv::imwrite( "/home/turtlebot/Desktop/" + std::to_string(int(rand()%100)) + ".jpg", scene_img);
+        /***************/
 
         // find a match and update templateID based on majority (if it exists) for robustness
         std::vector<TEMPLATE> matched_templates;
