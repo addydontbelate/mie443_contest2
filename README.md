@@ -3,7 +3,7 @@
 
 ## Simulation Launch Instructions
 
-- Change log file paths:
+- Set log file paths for `contest2_log.txt` and `vision_log.txt`:
 	- In `src/contest2.cpp` update `RESULT_FILEPATH` macro with the desired file path `/path/to/dir/contest2_log.txt`. 
 	- In `include/image_pipeline.h` update `VISLOG_FILEPATH` macro with the desired file path `/path/to/dir/vision_log.txt`.
 - `roslaunch mie443_contest2 turtlebot_world.launch world:=1`
