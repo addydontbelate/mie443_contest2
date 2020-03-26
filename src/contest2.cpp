@@ -5,7 +5,8 @@
 #include "logger.h"
 
 // strategy definitions
-#define RESULT_FILEPATH "/home/turtlebot/Desktop/contest2_log.txt"
+#define RESULT_FILEPATH "/home/turtlebot/Desktop/"
+#define RESULT_FILENAME "contest2_log.txt"
 #define SUCCESS true
 #define FAILURE false
 #define NUM_REPLANS 2
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
     Navigation nav(nh, boxes);
     ImagePipeline img_pipeline(nh, boxes);
     Logger logger;
-    logger.open(RESULT_FILEPATH);
+    logger.open(std::string(RESULT_FILEPATH) + std::string(RESULT_FILENAME));
     
     ros::Rate loop_rate(10); // run at 10 Hz
     rob_start = CLOCK::now();

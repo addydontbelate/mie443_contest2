@@ -28,7 +28,8 @@
 #define MIN_AREA 50
 
 // log file
-#define VISLOG_FILEPATH "/home/turtlebot/Desktop/vision_log.txt"
+#define VISLOG_FILEPATH "/home/turtlebot/Desktop/"
+#define VISLOG_FILENAME "vision_log.txt"
 
 // possible template IDs
 enum TEMPLATE

@@ -11,7 +11,7 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     is_valid = false;
     templateID = TEMPLATE::UNINITIALIZED;
     flann_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
-    logger.open(VISLOG_FILEPATH);
+    logger.open(std::string(VISLOG_FILEPATH) + std::string(VISLOG_FILENAME));
     logger.write("\n\n************ NEW RUN *************");
     load_template_features(boxes);
 }
@@ -28,10 +28,6 @@ void ImagePipeline::load_template_features(const Boxes& boxes)
 
     if (box_features.empty())
         ROS_WARN("[IMG_PIPE] No templates were contained in boxes! No features added.");
-
-    /**** DEBUG ****/
-    srand(time(0));
-    /***************/
 }
 
 void ImagePipeline::image_callback(const sensor_msgs::ImageConstPtr& msg)
@@ -57,6 +53,7 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     // reset template ID
     templateID = TEMPLATE::UNINITIALIZED;
     ros::spinOnce();
+    static int scene_count = 0;
 
     // check if scene image is valid
     if (!is_valid)
@@ -75,10 +72,8 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
         // send current scene
         // cv::imshow("view", scene_img);
         // cv::waitKey(200); // show for some time
-
-        /*** DEBUG *****/
-        cv::imwrite( "/home/turtlebot/Desktop/" + std::to_string(int(rand()%100)) + ".jpg", scene_img);
-        /***************/
+        scene_count++;
+        cv::imwrite(std::string(VISLOG_FILEPATH) + std::string("scene_img_") + std::to_string(scene_count) + ".jpg", scene_img);
 
         // find a match and update templateID based on majority (if it exists) for robustness
         std::vector<TEMPLATE> matched_templates;
