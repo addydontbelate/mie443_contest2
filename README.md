@@ -4,8 +4,8 @@
 ## Simulation Launch Instructions
 
 - Set log file paths for `contest2_log.txt`, `vision_log.txt`, and scene images:
-	- In `src/contest2.cpp` update `RESULT_FILEPATH` macro with the desired file path `/path/to/dir/` for the contest log. 
-	- In `include/image_pipeline.h` update `VISLOG_FILEPATH` macro with the desired file path `/path/to/dir/` for the vision log and scene images.
+	- In `src/contest2.cpp` update `RESULT_DIR` macro with the desired directory path `/path/to/dir/` for the contest log. 
+	- In `include/image_pipeline.h` update `VISLOG_DIR` macro with the desired directory path `/path/to/dir/` for the vision log and scene images.
 - `roslaunch mie443_contest2 turtlebot_world.launch world:=1`
 - `roslaunch turtlebot_gazebo amcl_demo.launch map_file:=/home/<username>/catkin_ws/src/mie443_contest2/maps/map_1.yaml` (**note:** an absolute path to the map file is required)
 - `roslaunch turtlebot_rviz_launchers view_navigation.launch`

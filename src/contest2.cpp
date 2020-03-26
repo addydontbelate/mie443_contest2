@@ -5,7 +5,7 @@
 #include "logger.h"
 
 // strategy definitions
-#define RESULT_FILEPATH "/home/turtlebot/Desktop/"
+#define RESULT_DIR "/home/turtlebot/Desktop/"
 #define RESULT_FILENAME "contest2_log.txt"
 #define SUCCESS true
 #define FAILURE false
@@ -44,7 +44,7 @@ int main(int argc, char** argv)
     Navigation nav(nh, boxes);
     ImagePipeline img_pipeline(nh, boxes);
     Logger logger;
-    logger.open(std::string(RESULT_FILEPATH) + std::string(RESULT_FILENAME));
+    logger.open(std::string(RESULT_DIR) + std::string(RESULT_FILENAME));
     
     ros::Rate loop_rate(10); // run at 10 Hz
     rob_start = CLOCK::now();
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
                     // iteratively try moving closer to the box by 0.1m in each re-plan
                     float phi = box_seq[obj_idx][3];
                     float x = box_seq[obj_idx][0] - (num_tries+1)*0.1*cos(phi);
-                    float y = box_seq[obj_idx][1] - (num_tries+1)*0.1*sin(phi);
+                    float y = box_seq[obj_idx][1] - (num_tries+1)*0.1*sin(phi); 
 
                     if (nav.move_to_goal(x, y, phi) == SUCCESS)
                     {

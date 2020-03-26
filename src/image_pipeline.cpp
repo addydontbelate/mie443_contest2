@@ -11,8 +11,7 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n, const Boxes& boxes)
     is_valid = false;
     templateID = TEMPLATE::UNINITIALIZED;
     flann_detector = cv::xfeatures2d::SURF::create(MIN_HESSIAN);
-    logger.open(std::string(VISLOG_FILEPATH) + std::string(VISLOG_FILENAME));
-    logger.write("\n\n************ NEW RUN *************");
+    logger.open(std::string(VISLOG_DIR) + std::string(VISLOG_FILENAME));
     load_template_features(boxes);
 }
 
@@ -69,11 +68,13 @@ int ImagePipeline::get_template_ID(const Boxes& boxes)
     }
     else
     {
-        // send current scene
         // cv::imshow("view", scene_img);
         // cv::waitKey(200); // show for some time
+        
+        // store current scene
         scene_count++;
-        cv::imwrite(std::string(VISLOG_FILEPATH) + std::string("scene_img_") + std::to_string(scene_count) + ".jpg", scene_img);
+        cv::imwrite(std::string(VISLOG_DIR) + std::string("scene_img_") + std::to_string(scene_count) + 
+            ".jpg", scene_img);
 
         // find a match and update templateID based on majority (if it exists) for robustness
         std::vector<TEMPLATE> matched_templates;
