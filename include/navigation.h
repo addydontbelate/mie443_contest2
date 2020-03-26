@@ -6,7 +6,7 @@
 #include "boxes.h"
 #include "robot_pose.h"
 
-#define IMG_CAPTURE_OFFSET 0.4
+#define IMG_CAPTURE_OFFSET 0.45
 #define VISITED true
 #define UNVISITED false
 

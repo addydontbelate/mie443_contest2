@@ -347,7 +347,7 @@ int ImagePipeline::match_to_template_homog(const ImageFeatures& template_feature
 
     // compute homography from scene to object
     cv::Mat H = cv::findHomography(obj, scene, cv::RANSAC);
-    if (H.rows == 0 && H.cols == 0)
+    if (H.empty())
         return 0;
 
     // get corners from the template to be "detected"
