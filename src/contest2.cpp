@@ -30,13 +30,13 @@ int main(int argc, char** argv)
 
     // initialize box coordinates and templates
     Boxes boxes; 
-    if(!boxes.load_coords() || !boxes.load_templates())
+    if (!boxes.load_coords() || !boxes.load_templates())
     {
         ROS_ERROR("[MAIN] Could not load coords or templates! Exiting...");
         exit(EXIT_FAILURE);
     }
 
-    for(int i = 0; i < boxes.coords.size(); i++)
+    for (int i = 0; i < boxes.coords.size(); i++)
         ROS_INFO("[Main] Box %d coordinates (x: %f, y: %f, z: %f)", i, 
             boxes.coords[i][0], boxes.coords[i][1], boxes.coords[i][2]);
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     nav.localize();
 
     // keep on executing strategy till there are no unvisited (and un-processed) objectives
-    while(ros::ok() && nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT)
+    while (ros::ok() && nav.any_unvisited_obj() && seconds_elapsed < TIME_LIMIT)
     {
         ros::spinOnce();
 
